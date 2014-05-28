@@ -1,5 +1,5 @@
 """
-API simples, utilizando sqlite, para gerenciar conexoes e entidades. Exemplo de uso a seguir.
+ORM simples, utilizando python e sqlite. Exemplo de uso a seguir.
 
     class Entry(BaseEntity):
 
