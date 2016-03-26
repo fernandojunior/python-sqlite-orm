@@ -37,7 +37,7 @@ class Post(Model):
 * Create a data access object (DAO) incating a database file.
 
 ```py
->>> from orm import DatabaseConnection
+>>> from orm import Database
 >>> db = DatabaseConnection('db.sqlite')
 ```
 
@@ -50,7 +50,6 @@ class Post(Model):
 * Create a manager to perform CRUD operations in the database.
 
 ```py
->>> db = DatabaseConnection('db.sqlite')
 >>> objects = Post.manager(db)
 ```
 
@@ -109,5 +108,5 @@ The MIT License.
 
 -
 
-Copyright (c) 2016 [Fernando Felix do Nascimento Junior](https://github.com/fernandojunior/).
+Copyright (c) 2014-2016 [Fernando Felix do Nascimento Junior](https://github.com/fernandojunior/).
 
