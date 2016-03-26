@@ -1,42 +1,5 @@
 """
-A Python object relational mapper for SQLite. Usage:
-
-    >>> # doctest
-    >>> class Post(Model):
-    ...     def __init__(self, title, text, id=None):
-    ...         self.id = id
-    ...         self.title = title
-    ...         self.text = text
-    ...     def show(self):
-    ...         return \'%s %s' % (self.title, self.text)
-    ...     @classmethod
-    ...     def schema(cls):
-    ...         return '''
-    ...         drop table if exists post;
-    ...         create table post (
-    ...             id integer primary key autoincrement,
-    ...             title text not null,
-    ...             text text not null
-    ...         );
-    ...         '''
-    >>> db = Database('db.sqlite.test')
-    >>> objects = Post.manager(db)
-    >>> hello_world = objects.save(Post('Hello', 'World'))
-    >>> post = objects.get(hello_world.id)  # or objects.all()
-    >>> post.text = 'Mundo'
-    >>> objects.update(post)
-    >>> post.show() == 'Hello Mundo'
-    True
-    >>> db.commit()
-    >>> objects.delete(post)
-    >>> db.commit()
-    >>> objects.save(Post('Hello', 'World'))
-    {'text': 'World', 'id': 2, 'title': 'Hello'}
-    >>> db.close()
-    >>> objects.all() == []
-    True
-    >>> import os
-    >>> os.remove('db.sqlite.test')
+A Python object relational mapper for SQLite.
 
 Author: Fernando Felix do Nascimento Junior
 License: MIT License
@@ -156,8 +119,4 @@ class Model(object):
     @classmethod
     def manager(cls, db):
         return Manager(db, cls)
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
 
