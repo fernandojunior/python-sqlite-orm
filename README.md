@@ -70,7 +70,7 @@ class Post(Model):
 ```py
 >>> post.text = 'Mundo'
 >>> objects.update(post)
->>> assert(post.show() == 'Hello Mundo')
+>>> post.show() == 'Hello Mundo'
 True
 ```
 
@@ -91,8 +91,9 @@ True
 
 ```py
 >>> objects.save(Post('Hello', 'World'))
+{'text': 'World', 'id': 2, 'title': 'Hello'}
 >>> db.close()
->>> assert(objects.all() == [])
+>>> objects.all() == []
 True
 ```
 
