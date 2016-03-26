@@ -38,7 +38,7 @@ class Post(Model):
 
 ```py
 >>> from orm import Database
->>> db = DatabaseConnection('db.sqlite')
+>>> db = Database('db.sqlite')
 ```
 
 * Import the Post model.
