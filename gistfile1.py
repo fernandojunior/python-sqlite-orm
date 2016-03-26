@@ -1,3 +1,13 @@
+'''
+A Python object relational mapper for SQLite.
+
+Author: Fernando Felix do Nascimento Junior
+License: MIT License
+Homepage: https://github.com/fernandojunior/python-sqlite-orm
+'''
+import sqlite3
+
+
 class DatabaseConnection(object):
 
     def __init__(self, *args, **kwargs):
