@@ -8,7 +8,7 @@ Homepage: https://github.com/fernandojunior/python-sqlite-orm
 import sqlite3
 
 
-class DatabaseConnection(object):
+class Database(object):
 
     def __init__(self, *args, **kwargs):
         self.args = args
