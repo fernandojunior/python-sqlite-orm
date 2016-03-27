@@ -48,7 +48,7 @@ class Post(Model):
 >>> Post.__db__ = db  # see another approach in tests.py
 ```
 
-* Create an object (staging area).
+* Create a post and save it in the staging area (without commit) of database.
 
 ```py
 >>> hello_world = Post('Hello', 'World').save()
@@ -56,12 +56,12 @@ class Post(Model):
 1
 ```
 
-* Update the object.
+* Change the hello world post and update it in the database.
 
 ```py
 >>> hello_world.text = 'Mundo'
->>> objects.update(hello_world)
->>> hello_world.show()
+>>> hello_world.update()
+>>> hello_world.show()  # show the post content
 Hello Mundo
 ```
 
@@ -71,10 +71,10 @@ Hello Mundo
 >>> db.commit()
 ```
 
-* Delete the object and commit the change.
+* Delete the object and commit.
 
 ```py
->>> objects.delete(hello_world)
+>>> hello_world.delete()
 >>> db.commit()
 ```
 
@@ -84,12 +84,12 @@ Hello Mundo
 >>> objects = Post.manager(db)
 ```
 
-Create and read a post.
+Save and get a post.
 
 ```py
->>> objects.save(Post('Hello', 'World'))  # save a post
+>>> objects.save(Post('Hello', 'World'))
 {'text': 'World', 'id': 2, 'title': 'Hello'}
->>> objects.get(2)  # get by id from database
+>>> objects.get(2)  # get by id from the staging area
 ```
 
 * Close the database without commit the changes
