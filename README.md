@@ -3,9 +3,9 @@
 A Python object relational mapper for SQLite.
 
 
-## Usage
+## Example
 
-* Define a Model.
+* Define a Post model.
 
 ```py
 # post.py
@@ -34,7 +34,7 @@ class Post(Model):
         '''
 ```
 
-* Create a data access object (DAO) incating a database file.
+* Create a data access object (DAO) indicating a database file.
 
 ```py
 >>> from orm import Database
@@ -52,13 +52,8 @@ class Post(Model):
 
 ```py
 >>> hello_world = Post('Hello', 'World').save()
+>>> print(hello_world.id)  # auto generated id
 1
-```
-
-* Print the auto generated id of the object.
-
-```py
->>> print(hello_world.id)
 ```
 
 * Update the object.
@@ -66,17 +61,17 @@ class Post(Model):
 ```py
 >>> hello_world.text = 'Mundo'
 >>> objects.update(hello_world)
->>> hello_world.show() == 'Hello Mundo'
-True
+>>> hello_world.show()
+Hello Mundo
 ```
 
-* Commit all staged operations (`save` and `update`) to database.
+* Commit all staged operations (`save` and `update`) to the database.
 
 ```py
 >>> db.commit()
 ```
 
-* Delete and commit the object.
+* Delete the object and commit the change.
 
 ```py
 >>> objects.delete(hello_world)
@@ -92,22 +87,22 @@ True
 Create and read a post.
 
 ```py
->>> objects.save(Post('Hello', 'World'))  # id 2
+>>> objects.save(Post('Hello', 'World'))  # save a post
 {'text': 'World', 'id': 2, 'title': 'Hello'}
->>> objects.get(2)  # or objects.all()
+>>> objects.get(2)  # get by id from database
 ```
 
-* Close the database without commit the saved post with id `2`.
+* Close the database without commit the changes
 
 ```py
 >>> db.close()
 ```
 
-Get all posts from database to return a empty list.
+Get all posts from database.
 
 ```py
->>> objects.all() == []
-True
+>>> objects.all()  # return a empty list
+[]
 ```
 
 ## Contributing
