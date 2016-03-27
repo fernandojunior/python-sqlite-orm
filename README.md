@@ -13,13 +13,9 @@ A Python object relational mapper for SQLite.
 from orm import Model
 
 class Post(Model):
-    def __init__(self, title, text, id=None):
+    def __init__(self, text, id=None):
         self.id = id
-        self.title = title
         self.text = text
-
-    def show(self):
-        return '%s %s' % (self.title, self.text)
 
     @classmethod
     def schema(cls):
@@ -28,7 +24,6 @@ class Post(Model):
 
         create table post (
             id integer primary key autoincrement,
-            title text not null,
             text text not null
         );
         '''
@@ -51,17 +46,17 @@ class Post(Model):
 * Create a post and save it in the staging area (without commit) of database.
 
 ```py
->>> hello_world = Post('Hello', 'World').save()
->>> print(hello_world.id)  # auto generated id
+>>> post = Post('Hello World').save()
+>>> print(post.id)  # auto generated id
 1
 ```
 
 * Change the hello world post and update it in the database.
 
 ```py
->>> hello_world.text = 'Mundo'
->>> hello_world.update()
->>> hello_world.show()  # show the post content
+>>> post.text = 'Hello Mundo'
+>>> post.update()
+>>> post.text
 Hello Mundo
 ```
 
@@ -74,7 +69,7 @@ Hello Mundo
 * Delete the object and commit.
 
 ```py
->>> hello_world.delete()
+>>> post.delete()
 >>> db.commit()
 ```
 
