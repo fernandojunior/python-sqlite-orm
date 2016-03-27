@@ -1,10 +1,10 @@
-"""
+'''
 A Python object relational mapper for SQLite.
 
 Author: Fernando Felix do Nascimento Junior
 License: MIT License
 Homepage: https://github.com/fernandojunior/python-sqlite-orm
-"""
+'''
 import sqlite3
 
 
@@ -14,6 +14,9 @@ class Database(object):
         self.args = args
         self.kwargs = kwargs
         self.connected = False
+        self.Model = type('Model%s' % str(self), (Model,), {
+            '__db__': self,
+        })
 
     @property
     def connection(self):
@@ -109,14 +112,29 @@ class Manager(object):
 
 class Model(object):
 
+    __db__ = None
+
+    def delete(self):
+        return self.__class__.manager().delete(self)
+
+    def save(self):
+        return self.__class__.manager().save(self)
+
+    def update(self):
+        return self.__class__.manager().update(self)
+
+    @property
+    def public(self):
+        return dict(i for i in vars(self).items() if i[0][0] is not '_')
+
     def __repr__(self):
-        return str(self.__dict__)
+        return str(self.public)
 
     @classmethod
     def schema(cls):
         raise NotImplementedError
 
     @classmethod
-    def manager(cls, db):
-        return Manager(db, cls)
-
+    def manager(cls, db=None):
+        db = db if db else cls.__db__
+        return Manager(cls.__db__, cls)

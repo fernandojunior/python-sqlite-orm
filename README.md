@@ -41,36 +41,32 @@ class Post(Model):
 >>> db = Database('db.sqlite')
 ```
 
-* Import the Post model.
+* Import the Post model and link it to the database.
 
 ```py
 >>> from post import Post
-```
-
-* Create a manager to perform CRUD operations in the database.
-
-```py
->>> objects = Post.manager(db)
+>>> Post.__db__ = db  # see another approach in tests.py
 ```
 
 * Create an object (staging area).
 
 ```py
->>> hello_world = objects.save(Post('Hello', 'World'))
+>>> hello_world = Post('Hello', 'World').save()
+1
 ```
 
-* Read an object.
+* Print the auto generated id of the object.
 
 ```py
->>> post = objects.get(hello_world.id)  # or objects.all()
+>>> print(hello_world.id)
 ```
 
 * Update the object.
 
 ```py
->>> post.text = 'Mundo'
->>> objects.update(post)
->>> post.show() == 'Hello Mundo'
+>>> hello_world.text = 'Mundo'
+>>> objects.update(hello_world)
+>>> hello_world.show() == 'Hello Mundo'
 True
 ```
 
@@ -83,16 +79,33 @@ True
 * Delete and commit the object.
 
 ```py
->>> objects.delete(post)
+>>> objects.delete(hello_world)
 >>> db.commit()
 ```
 
-* Create an object without commit to return a empty list.
+* Create a manager that can perform CRUD operations in the database.
 
 ```py
->>> objects.save(Post('Hello', 'World'))
+>>> objects = Post.manager(db)
+```
+
+Create and read a post.
+
+```py
+>>> objects.save(Post('Hello', 'World'))  # id 2
 {'text': 'World', 'id': 2, 'title': 'Hello'}
+>>> objects.get(2)  # or objects.all()
+```
+
+* Close the database without commit the saved post with id `2`.
+
+```py
 >>> db.close()
+```
+
+Get all posts from database to return a empty list.
+
+```py
 >>> objects.all() == []
 True
 ```
