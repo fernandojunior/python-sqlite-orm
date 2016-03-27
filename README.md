@@ -45,7 +45,7 @@ class Post(Model):
 
 ```py
 >>> from post import Post
->>> Post.__db__ = db  # see another approach in tests.py
+>>> Post.db = db  # see another approach in tests.py
 ```
 
 * Create a post and save it in the staging area (without commit) of database.

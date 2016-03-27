@@ -8,6 +8,10 @@ Homepage: https://github.com/fernandojunior/python-sqlite-orm
 import sqlite3
 
 
+def cut_attrs(obj, keys):
+    return dict(i for i in obj.__dict__.items() if i[0] not in keys)
+
+
 class Database(object):
 
     def __init__(self, *args, **kwargs):
@@ -15,32 +19,32 @@ class Database(object):
         self.kwargs = kwargs
         self.connected = False
         self.Model = type('Model%s' % str(self), (Model,), {
-            '__db__': self,
+            'db': self,
         })
 
     @property
     def connection(self):
         if self.connected:
-            return self.__connection
+            return self._connection
 
-        self.__connection = sqlite3.connect(*self.args, **self.kwargs)
-        self.__connection.row_factory = sqlite3.Row
+        self._connection = sqlite3.connect(*self.args, **self.kwargs)
+        self._connection.row_factory = sqlite3.Row
         self.connected = True
-        return self.__connection
+        return self._connection
+
+    def close(self):
+        if self.connected:
+            self.connection.close()
+        self.connected = False
+
+    def commit(self):
+        self.connection.commit()
 
     def execute(self, sql, *args):
         return self.connection.execute(sql, args)
 
     def executescript(self, script):
         return self.connection.cursor().executescript(script)
-
-    def commit(self):
-        self.connection.commit()
-
-    def close(self):
-        if self.connected:
-            self.connection.close()
-        self.connected = False
 
 
 class Manager(object):
@@ -50,19 +54,17 @@ class Manager(object):
         self.entity_cls = entity_cls
         self.table_name = entity_cls.__name__.lower()
 
-        if not self.__hastable():
-            self.__run_schema()
+        if not self._hastable():
+            self._runschema()
             self.db.commit()
-
-    def __hastable(self):
-        sql = 'select name len FROM %s where type = ? AND name = ?'
-        cursor = self.db.execute(
-            sql % 'sqlite_master', 'table', self.table_name)
-        return True if cursor.fetchall() else False
 
     def all(self):
         cursor = self.db.execute('select * from %s' % self.table_name)
         return [self.entity_cls(**row) for row in cursor.fetchall()]
+
+    def delete(self, obj):
+        sql = 'DELETE from %s WHERE id = ?'
+        self.db.execute(sql % self.table_name, obj.id)
 
     def get(self, id):
         cursor = self.db.execute(
@@ -83,36 +85,35 @@ class Manager(object):
         if obj.id and self.has(obj.id):
             raise ValueError('An object%s with id already registred: %s' % (
                 self.entity_cls, obj.id))
-
-        # copying the dictionary object without 'id' element
-        d = dict((k, v) for k, v in obj.__dict__.iteritems() if k is not 'id')
-        keys = '(%s)' % ', '.join(d.keys())  # (key1, key2, ...)
-        refs = '(%s)' % ', '.join('?' for i in range(len(d)))  # (?, ?, ...)
-        values = d.values()  # [value1, value2, ...]
+        copy = cut_attrs(obj, 'id')
+        keys = '(%s)' % ', '.join(copy.keys())  # (key1, key2, ...)
+        refs = '(%s)' % ', '.join('?' for i in range(len(copy)))  # (?, ?, ...)
+        values = copy.values()  # [value1, value2, ...]
         sql = 'insert into %s %s values %s' % (self.table_name, keys, refs)
         cursor = self.db.execute(sql, *values)
         obj.id = cursor.lastrowid
         return obj
 
     def update(self, obj):
-        # copying the dictionary object without 'id' item
-        d = dict((k, v) for k, v in obj.__dict__.iteritems() if k is not 'id')
-        keys = '= ?, '.join(d.keys()) + '= ?'  # key1 = ?, key2 = ?, ...
-        values = d.values() + [obj.id]  # [value1, value2, ..., id_value]
+        copy = cut_attrs(obj, 'id')
+        keys = '= ?, '.join(copy.keys()) + '= ?'  # key1 = ?, key2 = ?, ...
+        values = copy.values() + [obj.id]  # [value1, value2, ..., id_value]
         sql = 'UPDATE %s SET %s WHERE id = ?' % (self.table_name, keys)
         self.db.execute(sql, *values)
 
-    def delete(self, obj):
-        sql = 'DELETE from %s WHERE id = ?'
-        self.db.execute(sql % self.table_name, obj.id)
+    def _hastable(self):
+        sql = 'select name len FROM %s where type = ? AND name = ?'
+        cursor = self.db.execute(
+            sql % 'sqlite_master', 'table', self.table_name)
+        return True if cursor.fetchall() else False
 
-    def __run_schema(self):
+    def _runschema(self):
         self.db.executescript(self.entity_cls.schema())
 
 
 class Model(object):
 
-    __db__ = None
+    db = None
 
     def delete(self):
         return self.__class__.manager().delete(self)
@@ -131,10 +132,10 @@ class Model(object):
         return str(self.public)
 
     @classmethod
-    def schema(cls):
-        raise NotImplementedError
+    def manager(cls, db=None):
+        db = db if db else cls.db
+        return Manager(cls.db, cls)
 
     @classmethod
-    def manager(cls, db=None):
-        db = db if db else cls.__db__
-        return Manager(cls.__db__, cls)
+    def schema(cls):
+        raise NotImplementedError
