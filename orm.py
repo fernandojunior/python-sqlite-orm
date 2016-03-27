@@ -18,9 +18,7 @@ class Database(object):
         self.args = args
         self.kwargs = kwargs
         self.connected = False
-        self.Model = type('Model%s' % str(self), (Model,), {
-            'db': self,
-        })
+        self.Model = type('Model%s' % str(self), (Model,), {'db': self})
 
     @property
     def connection(self):
