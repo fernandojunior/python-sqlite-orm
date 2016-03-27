@@ -74,20 +74,20 @@ class Post(Model):
 True
 ```
 
-* Commit all performed operations.
+* Commit all staged operations (`save` and `update`) to database.
 
 ```py
 >>> db.commit()
 ```
 
-* Delete and commit.
+* Delete and commit the object.
 
 ```py
 >>> objects.delete(post)
 >>> db.commit()
 ```
 
-* Create a object without commit to return a empty list.
+* Create an object without commit to return a empty list.
 
 ```py
 >>> objects.save(Post('Hello', 'World'))
@@ -110,4 +110,3 @@ The MIT License.
 -
 
 Copyright (c) 2014-2016 [Fernando Felix do Nascimento Junior](https://github.com/fernandojunior/).
-
