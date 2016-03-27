@@ -31,8 +31,7 @@ try:
     db.commit()
     objects = Post.manager()
     objects.save(Post('Hello World'))
-    assert(objects.get(2).public == {
-        'text': 'Hello World', 'id': 2})
+    assert(objects.get(2).public == {'text': 'Hello World', 'id': 2})
     db.close()
     assert(list(objects.all()) == [])
 finally:

@@ -29,7 +29,7 @@ class Post(Model):
         '''
 ```
 
-* Import `Database` from orm to create a data access object (DAO).
+* Import `Database` to create a data access object (DAO).
 
 ```py
 >>> from orm import Database
@@ -96,7 +96,7 @@ Save and get a post.
 Get all posts from database.
 
 ```py
->>> list(objects.all())  # return a 'empty' generator
+>>> list(objects.all())  # return a "empty" generator
 []
 ```
 
