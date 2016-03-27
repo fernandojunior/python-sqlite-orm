@@ -101,7 +101,7 @@ Save and get a post.
 Get all posts from database.
 
 ```py
->>> objects.all()  # return a empty list
+>>> list(objects.all())  # return a 'empty' generator
 []
 ```
 

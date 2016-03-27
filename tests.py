@@ -39,6 +39,6 @@ try:
     assert(objects.get(2).public == {
         'text': 'World', 'id': 2, 'title': 'Hello'})
     db.close()
-    assert(objects.all() == [])
+    assert(list(objects.all()) == [])
 finally:
     os.remove('db.sqlite.test')

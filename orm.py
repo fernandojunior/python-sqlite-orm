@@ -24,7 +24,6 @@ class Database(object):
     def connection(self):
         if self.connected:
             return self._connection
-
         self._connection = sqlite3.connect(*self.args, **self.kwargs)
         self._connection.row_factory = sqlite3.Row
         self.connected = True
@@ -42,71 +41,63 @@ class Database(object):
         return self.connection.execute(sql, args)
 
     def executescript(self, script):
-        return self.connection.cursor().executescript(script)
+        self.connection.cursor().executescript(script)
+        self.commit()
 
 
 class Manager(object):
 
-    def __init__(self, db, entity_cls):
+    def __init__(self, db, model):
         self.db = db
-        self.entity_cls = entity_cls
-        self.table_name = entity_cls.__name__.lower()
-
+        self.model = model
+        self.table_name = model.__name__.lower()
         if not self._hastable():
-            self._runschema()
-            self.db.commit()
+            self.db.executescript(self.model.schema())
 
     def all(self):
         cursor = self.db.execute('select * from %s' % self.table_name)
-        return [self.entity_cls(**row) for row in cursor.fetchall()]
+        return (self.model(**row) for row in cursor.fetchall())
 
     def delete(self, obj):
         sql = 'DELETE from %s WHERE id = ?'
         self.db.execute(sql % self.table_name, obj.id)
 
     def get(self, id):
-        cursor = self.db.execute(
-            'select * from %s where id = ?' % self.table_name, id)
+        sql = 'select * from %s where id = ?' % self.table_name
+        cursor = self.db.execute(sql, id)
         row = cursor.fetchone()
         if not row:
-            raise ValueError('Object%s with id does not exist: %s' % (
-                self.entity_cls, id))
-
-        return self.entity_cls(**row)
+            msg = 'Object%s with id does not exist: %s' % (self.model, id)
+            raise ValueError(msg)
+        return self.model(**row)
 
     def has(self, id):
-        cursor = self.db.execute(
-            'select id from %s where id = ?' % self.table_name, id)
+        sql = 'select id from %s where id = ?' % self.table_name
+        cursor = self.db.execute(sql, id)
         return True if cursor.fetchall() else False
 
     def save(self, obj):
         if obj.id and self.has(obj.id):
-            raise ValueError('An object%s with id already registred: %s' % (
-                self.entity_cls, obj.id))
-        copy = cut_attrs(obj, 'id')
-        keys = '(%s)' % ', '.join(copy.keys())  # (key1, key2, ...)
-        refs = '(%s)' % ', '.join('?' for i in range(len(copy)))  # (?, ?, ...)
-        values = copy.values()  # [value1, value2, ...]
+            msg = 'Object%s id already registred: %s' % (self.model, obj.id)
+            raise ValueError(msg)
+        copy_ = cut_attrs(obj, 'id')
+        keys = '(%s)' % ', '.join(copy_.keys())  # (key1, ...)
+        refs = '(%s)' % ', '.join('?' for i in range(len(copy_)))  # (?, ...)
         sql = 'insert into %s %s values %s' % (self.table_name, keys, refs)
-        cursor = self.db.execute(sql, *values)
+        cursor = self.db.execute(sql, *copy_.values())
         obj.id = cursor.lastrowid
         return obj
 
     def update(self, obj):
-        copy = cut_attrs(obj, 'id')
-        keys = '= ?, '.join(copy.keys()) + '= ?'  # key1 = ?, key2 = ?, ...
-        values = copy.values() + [obj.id]  # [value1, value2, ..., id_value]
+        copy_ = cut_attrs(obj, 'id')
+        keys = '= ?, '.join(copy_.keys()) + '= ?'  # key1 = ?, ...
         sql = 'UPDATE %s SET %s WHERE id = ?' % (self.table_name, keys)
-        self.db.execute(sql, *values)
+        self.db.execute(sql, *(copy_.values() + [obj.id]))
 
     def _hastable(self):
-        sql = 'select name len FROM %s where type = ? AND name = ?'
-        cursor = self.db.execute(
-            sql % 'sqlite_master', 'table', self.table_name)
+        sql = 'select name len FROM sqlite_master where type = ? AND name = ?'
+        cursor = self.db.execute(sql, 'table', self.table_name)
         return True if cursor.fetchall() else False
-
-    def _runschema(self):
-        self.db.executescript(self.entity_cls.schema())
 
 
 class Model(object):
