@@ -3,9 +3,9 @@
 A Python object relational mapper for SQLite.
 
 
-## Example
+## Tutorial
 
-* Define a Post model.
+* Define a Post model in a `post.py` file.
 
 ```py
 # post.py
@@ -34,11 +34,11 @@ class Post(Model):
         '''
 ```
 
-* Create a data access object (DAO) indicating a database file.
+* Import `Database` from orm to create a data access object (DAO).
 
 ```py
 >>> from orm import Database
->>> db = Database('db.sqlite')
+>>> db = Database('db.sqlite')  # indicating a database file.
 ```
 
 * Import the Post model and link it to the database.
