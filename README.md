@@ -88,8 +88,8 @@ Save and get a post.
 
 ```py
 >>> objects.save(Post('Hello', 'World'))
-{'text': 'World', 'id': 2, 'title': 'Hello'}
 >>> objects.get(2)  # get by id from the staging area
+{'text': 'World', 'id': 2, 'title': 'Hello'}
 ```
 
 * Close the database without commit the changes
