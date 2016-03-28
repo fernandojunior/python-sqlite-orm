@@ -9,7 +9,7 @@ import sqlite3
 
 
 def cut_attrs(obj, keys):
-    return dict(i for i in obj.__dict__.items() if i[0] not in keys)
+    return dict(i for i in vars(obj).items() if i[0] not in keys)
 
 
 def render_schema(model):
@@ -17,7 +17,7 @@ def render_schema(model):
     datatypes = {str: 'text', int: 'integer', float: 'real'}
     iscol = lambda key, value: key[0] is not '_' and value in datatypes.keys()
     colrender = lambda key, value: '%s %s' % (key, datatypes[value])
-    cols = [colrender(*i) for i in model.__dict__.items() if iscol(*i)]
+    cols = [colrender(*i) for i in vars(model).items() if iscol(*i)]
     values = {'table': model.__name__, 'columns': ', '.join(cols)}
     return schema.format(**values)
 
