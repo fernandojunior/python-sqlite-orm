@@ -17,7 +17,6 @@ class Post(db.Model):
 try:
     post = Post('Hello World').save()
     assert(post.id == 1)
-    assert(isinstance(post.random, float))
     post.text = 'Hello Mundo'
     post.update()
     db.commit()
@@ -26,7 +25,8 @@ try:
     db.commit()
     objects = Post.manager()
     objects.save(Post('Hello World'))
-    assert(objects.get(2).public.keys() == ['text', 'random', 'id'])
+    assert(set(objects.get(2).public.keys()) == set(['id', 'text', 'random']))
+    assert(isinstance(objects.get(2).random, float))
     db.close()
     assert(list(objects.all()) == [])
 finally:

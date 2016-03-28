@@ -107,7 +107,7 @@ class Manager(object):
         copy_ = cut_attrs(obj, 'id')
         keys = '= ?, '.join(copy_.keys()) + '= ?'  # key1 = ?, ...
         sql = 'UPDATE %s SET %s WHERE id = ?' % (self.tablename, keys)
-        self.db.execute(sql, *(copy_.values() + [obj.id]))
+        self.db.execute(sql, *(list(copy_.values()) + [obj.id]))
 
     def _hastable(self):
         sql = 'select name len FROM sqlite_master where type = ? AND name = ?'
