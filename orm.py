@@ -12,6 +12,16 @@ def cut_attrs(obj, keys):
     return dict(i for i in obj.__dict__.items() if i[0] not in keys)
 
 
+def render_schema(model):
+    schema = 'create table {table} (id integer primary key autoincrement, {columns});'  # noqa
+    datatypes = {str: 'text', int: 'integer', float: 'real'}
+    iscol = lambda key, value: key[0] is not '_' and value in datatypes.keys()
+    colrender = lambda key, value: '%s %s' % (key, datatypes[value])
+    cols = [colrender(*i) for i in model.__dict__.items() if iscol(*i)]
+    values = {'table': model.__name__, 'columns': ', '.join(cols)}
+    return schema.format(**values)
+
+
 class Database(object):
 
     def __init__(self, *args, **kwargs):
@@ -50,40 +60,45 @@ class Manager(object):
     def __init__(self, db, model):
         self.db = db
         self.model = model
-        self.table_name = model.__name__.lower()
+        self.tablename = model.__name__
         if not self._hastable():
-            self.db.executescript(self.model.schema())
+            self.db.executescript(render_schema(self.model))
 
     def all(self):
-        cursor = self.db.execute('select * from %s' % self.table_name)
-        return (self.model(**row) for row in cursor.fetchall())
+        cursor = self.db.execute('select * from %s' % self.tablename)
+        return (self.create(**row) for row in cursor.fetchall())
+
+    def create(self, **kwargs):
+        obj = object.__new__(self.model)
+        obj.__dict__ = kwargs
+        return obj
 
     def delete(self, obj):
         sql = 'DELETE from %s WHERE id = ?'
-        self.db.execute(sql % self.table_name, obj.id)
+        self.db.execute(sql % self.tablename, obj.id)
 
     def get(self, id):
-        sql = 'select * from %s where id = ?' % self.table_name
+        sql = 'select * from %s where id = ?' % self.tablename
         cursor = self.db.execute(sql, id)
         row = cursor.fetchone()
         if not row:
             msg = 'Object%s with id does not exist: %s' % (self.model, id)
             raise ValueError(msg)
-        return self.model(**row)
+        return self.create(**row)
 
     def has(self, id):
-        sql = 'select id from %s where id = ?' % self.table_name
+        sql = 'select id from %s where id = ?' % self.tablename
         cursor = self.db.execute(sql, id)
         return True if cursor.fetchall() else False
 
     def save(self, obj):
-        if obj.id and self.has(obj.id):
+        if hasattr(obj, 'id') and self.has(obj.id):
             msg = 'Object%s id already registred: %s' % (self.model, obj.id)
             raise ValueError(msg)
         copy_ = cut_attrs(obj, 'id')
         keys = '(%s)' % ', '.join(copy_.keys())  # (key1, ...)
         refs = '(%s)' % ', '.join('?' for i in range(len(copy_)))  # (?, ...)
-        sql = 'insert into %s %s values %s' % (self.table_name, keys, refs)
+        sql = 'insert into %s %s values %s' % (self.tablename, keys, refs)
         cursor = self.db.execute(sql, *copy_.values())
         obj.id = cursor.lastrowid
         return obj
@@ -91,12 +106,12 @@ class Manager(object):
     def update(self, obj):
         copy_ = cut_attrs(obj, 'id')
         keys = '= ?, '.join(copy_.keys()) + '= ?'  # key1 = ?, ...
-        sql = 'UPDATE %s SET %s WHERE id = ?' % (self.table_name, keys)
+        sql = 'UPDATE %s SET %s WHERE id = ?' % (self.tablename, keys)
         self.db.execute(sql, *(copy_.values() + [obj.id]))
 
     def _hastable(self):
         sql = 'select name len FROM sqlite_master where type = ? AND name = ?'
-        cursor = self.db.execute(sql, 'table', self.table_name)
+        cursor = self.db.execute(sql, 'table', self.tablename)
         return True if cursor.fetchall() else False
 
 
@@ -122,9 +137,4 @@ class Model(object):
 
     @classmethod
     def manager(cls, db=None):
-        db = db if db else cls.db
-        return Manager(cls.db, cls)
-
-    @classmethod
-    def schema(cls):
-        raise NotImplementedError
+        return Manager(db if db else cls.db, cls)

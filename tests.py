@@ -1,4 +1,5 @@
 import os
+from random import random
 from orm import Database
 
 db = Database('db.sqlite.test')
@@ -6,23 +7,17 @@ db = Database('db.sqlite.test')
 
 class Post(db.Model):
 
-    def __init__(self, text, id=None):
-        self.id = id
-        self.text = text
+    random = float
+    text = str
 
-    @classmethod
-    def schema(cls):
-        return '''
-        drop table if exists post;
-        create table post (
-            id integer primary key autoincrement,
-            text text not null
-        );
-        '''
+    def __init__(self, text):
+        self.text = text
+        self.random = random()
 
 try:
     post = Post('Hello World').save()
     assert(post.id == 1)
+    assert(isinstance(post.random, float))
     post.text = 'Hello Mundo'
     post.update()
     db.commit()
@@ -31,7 +26,7 @@ try:
     db.commit()
     objects = Post.manager()
     objects.save(Post('Hello World'))
-    assert(objects.get(2).public == {'text': 'Hello World', 'id': 2})
+    assert(objects.get(2).public.keys() == ['text', 'random', 'id'])
     db.close()
     assert(list(objects.all()) == [])
 finally:

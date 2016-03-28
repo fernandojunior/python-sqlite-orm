@@ -13,20 +13,12 @@ A Python object relational mapper for SQLite.
 from orm import Model
 
 class Post(Model):
-    def __init__(self, text, id=None):
-        self.id = id
+
+    text = str
+
+    def __init__(self, text):
         self.text = text
 
-    @classmethod
-    def schema(cls):
-        return '''
-        drop table if exists post;
-
-        create table post (
-            id integer primary key autoincrement,
-            text text not null
-        );
-        '''
 ```
 
 * Import `Database` to create a data access object (DAO).
