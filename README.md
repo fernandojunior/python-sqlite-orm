@@ -5,6 +5,12 @@ A Python object relational mapper for SQLite.
 
 ## Tutorial
 
+* Install
+
+```sh
+pip install sqlite-orm
+```
+
 * Define a Post model in a `post.py` file.
 
 ```py
@@ -14,7 +20,7 @@ from orm import Model
 
 class Post(Model):
 
-    text = str
+    text = str  # other datatypes: int, float
 
     def __init__(self, text):
         self.text = text
