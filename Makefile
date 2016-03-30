@@ -6,7 +6,7 @@
 help:
 	@echo 'Usage: make [command]'
 	@echo 'Commands:'
-	@echo '  env          Create a isolated development environment with its dependencies.'
+	@echo '  env          Create an isolated development environment.'
 	@echo '  deps         Install dependencies.'
 	@echo '  build        Create a dist package.'
 	@echo '  install      Install a local dist package with pip.'
@@ -19,7 +19,8 @@ env:
 	virtualenv env && . env/bin/activate && make deps
 
 deps:
-	pip install -r requirements.txt
+	test -f requirements.txt && \
+	pip install -r requirements.txt || echo "requirements.txt doesn't exists"
 
 build:
 	python setup.py egg_info sdist bdist_wheel
