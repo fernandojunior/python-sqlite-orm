@@ -55,7 +55,7 @@ class Database(object):  # proxy class to access sqlite3.connect method
         self.commit()
 
 
-class Manager(object):  # mapper and crud interface for models
+class Manager(object):  # data mapper interface (generic repository) for models
 
     def __init__(self, db, model):
         self.db = db
@@ -115,7 +115,7 @@ class Manager(object):  # mapper and crud interface for models
         return True if cursor.fetchall() else False
 
 
-class Model(object):  # abstract entity model of a domain
+class Model(object):  # abstract entity model with an active record interface
 
     db = None
 
