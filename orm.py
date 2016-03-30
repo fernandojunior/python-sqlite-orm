@@ -115,7 +115,7 @@ class Manager(object):  # mapper and crud interface for models
         return True if cursor.fetchall() else False
 
 
-class Model(object):  # abstract entity model
+class Model(object):  # abstract entity model of a domain
 
     db = None
 
