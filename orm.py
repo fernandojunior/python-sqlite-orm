@@ -12,9 +12,9 @@ def cut_attrs(obj, keys):
     return dict(i for i in vars(obj).items() if i[0] not in keys)
 
 
-def render_schema(model):
+def render_schema(model):  # factory method to create table schemas for models
     schema = 'create table {table} (id integer primary key autoincrement, {columns});'  # noqa
-    datatypes = {str: 'text', int: 'integer', float: 'real'}
+    datatypes = {str: 'text', int: 'integer', float: 'real', chr: 'CHAR(1)'}
     iscol = lambda key, value: key[0] is not '_' and value in datatypes.keys()
     colrender = lambda key, value: '%s %s' % (key, datatypes[value])
     cols = [colrender(*i) for i in vars(model).items() if iscol(*i)]
@@ -22,7 +22,7 @@ def render_schema(model):
     return schema.format(**values)
 
 
-class Database(object):
+class Database(object):  # proxy class to access sqlite3.connect method
 
     def __init__(self, *args, **kwargs):
         self.args = args
@@ -55,7 +55,7 @@ class Database(object):
         self.commit()
 
 
-class Manager(object):
+class Manager(object):  # mapper and crud interface for models
 
     def __init__(self, db, model):
         self.db = db
@@ -115,7 +115,7 @@ class Manager(object):
         return True if cursor.fetchall() else False
 
 
-class Model(object):
+class Model(object):  # abstract entity model
 
     db = None
 
