@@ -2,8 +2,6 @@
 
 A Python object relational mapper for SQLite.
 
-![demo](https://github.com/fernandojunior/python-sqlite-orm/raw/master/demo.gif)
-
 ## Tutorial
 
 * Install
