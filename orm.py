@@ -14,7 +14,7 @@ def cut_attrs(obj, keys):
 
 def render_schema(model):  # factory method to create table schemas for models
     schema = 'create table {table} (id integer primary key autoincrement, {columns});'  # noqa
-    datatypes = {str: 'text', int: 'integer', float: 'real', chr: 'CHAR(1)'}
+    datatypes = {str: 'text', int: 'integer', float: 'real'}
     iscol = lambda key, value: key[0] is not '_' and value in datatypes.keys()
     colrender = lambda key, value: '%s %s' % (key, datatypes[value])
     cols = [colrender(*i) for i in vars(model).items() if iscol(*i)]
