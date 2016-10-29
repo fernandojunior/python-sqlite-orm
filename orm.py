@@ -91,7 +91,9 @@ class Manager(object):  # data mapper interface (generic repository) for models
         cursor = self.db.execute(sql, id)
         return True if cursor.fetchall() else False
 
-    def save(self, obj):
+    def save(self, obj, type_check=True):
+        type_check and self._isvalid(obj) # checks type only if type_check is True
+
         if hasattr(obj, 'id') and self.has(obj.id):
             msg = 'Object%s id already registred: %s' % (self.model, obj.id)
             raise ValueError(msg)
@@ -114,6 +116,16 @@ class Manager(object):  # data mapper interface (generic repository) for models
         cursor = self.db.execute(sql, 'table', self.tablename)
         return True if cursor.fetchall() else False
 
+    def _isvalid(self, obj):
+        valid_keyvals = {key: self.model.__dict__[key] for key in vars(obj).keys()} # column,type pairs defined in model
+        insert_keyvals = {key: value.__class__ for key, value in vars(obj).items()} # column,type pairs in new record
+
+        for valid_key, insert_key in zip(valid_keyvals, insert_keyvals):
+            if(valid_keyvals[valid_key] is not insert_keyvals[insert_key]):
+                msg = "%s value should be type %s not %s" % (insert_key, valid_keyvals[valid_key], insert_keyvals[insert_key])
+                raise TypeError(msg)
+
+
 
 class Model(object):  # abstract entity model with an active record interface
 
@@ -122,8 +134,8 @@ class Model(object):  # abstract entity model with an active record interface
     def delete(self):
         return self.__class__.manager().delete(self)
 
-    def save(self):
-        return self.__class__.manager().save(self)
+    def save(self, type_check=True):
+        return self.__class__.manager().save(self, type_check)
 
     def update(self):
         return self.__class__.manager().update(self)
