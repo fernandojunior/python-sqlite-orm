@@ -126,7 +126,6 @@ class Manager(object):  # data mapper interface (generic repository) for models
                 raise TypeError(msg)
 
 
-
 class Model(object):  # abstract entity model with an active record interface
 
     db = None
