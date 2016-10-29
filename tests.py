@@ -19,6 +19,13 @@ try:
     assert(post.id == 1)
     post.text = 'Hello Mundo'
     post.update()
+    try:
+        post.random = None
+        post.update(type_check=True)
+    except TypeError:
+        pass
+    else:
+        raise Exception("Failed to check type!")
     db.commit()
     assert(post.text == 'Hello Mundo')
     post.delete()
