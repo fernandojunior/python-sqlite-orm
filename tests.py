@@ -23,6 +23,12 @@ try:
     assert(post.text == 'Hello Mundo')
     post.delete()
     db.commit()
+    try:
+        invalidPost = Post(None).save(type_check=True)
+    except TypeError:
+        pass
+    else:
+        raise Exception("Failed to check type!")
     objects = Post.manager()
     objects.save(Post('Hello World'))
     assert(set(objects.get(2).public.keys()) == set(['id', 'text', 'random']))
