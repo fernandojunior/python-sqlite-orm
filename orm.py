@@ -92,12 +92,11 @@ class Manager(object):  # data mapper interface (generic repository) for models
         return True if cursor.fetchall() else False
 
     def save(self, obj, type_check=True):
-        type_check and self._isvalid(obj) # checks type only if type_check is True
-
         if hasattr(obj, 'id') and self.has(obj.id):
             msg = 'Object%s id already registred: %s' % (self.model, obj.id)
             raise ValueError(msg)
         copy_ = cut_attrs(obj, 'id')
+        type_check and self._isvalid(copy_) # checks type only if type_check is True
         keys = '(%s)' % ', '.join(copy_.keys())  # (key1, ...)
         refs = '(%s)' % ', '.join('?' for i in range(len(copy_)))  # (?, ...)
         sql = 'insert into %s %s values %s' % (self.tablename, keys, refs)
@@ -105,8 +104,9 @@ class Manager(object):  # data mapper interface (generic repository) for models
         obj.id = cursor.lastrowid
         return obj
 
-    def update(self, obj):
+    def update(self, obj, type_check=True):
         copy_ = cut_attrs(obj, 'id')
+        type_check and self._isvalid(copy_) # checks type only if type_check is True
         keys = '= ?, '.join(copy_.keys()) + '= ?'  # key1 = ?, ...
         sql = 'UPDATE %s SET %s WHERE id = ?' % (self.tablename, keys)
         self.db.execute(sql, *(list(copy_.values()) + [obj.id]))
@@ -117,8 +117,8 @@ class Manager(object):  # data mapper interface (generic repository) for models
         return True if cursor.fetchall() else False
 
     def _isvalid(self, obj):
-        valid_keyvals = {key: self.model.__dict__[key] for key in vars(obj).keys()} # column,type pairs defined in model
-        insert_keyvals = {key: value.__class__ for key, value in vars(obj).items()} # column,type pairs in new record
+        valid_keyvals = {key: self.model.__dict__[key] for key in obj.keys()} # column,type pairs defined in model
+        insert_keyvals = {key: value.__class__ for key, value in obj.items()} # column,type pairs in new record
 
         for valid_key, insert_key in zip(valid_keyvals, insert_keyvals):
             if(valid_keyvals[valid_key] is not insert_keyvals[insert_key]):
@@ -137,8 +137,8 @@ class Model(object):  # abstract entity model with an active record interface
     def save(self, type_check=True):
         return self.__class__.manager().save(self, type_check)
 
-    def update(self):
-        return self.__class__.manager().update(self)
+    def update(self, type_check=True):
+        return self.__class__.manager().update(self, type_check)
 
     @property
     def public(self):
