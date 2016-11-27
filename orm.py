@@ -1,6 +1,8 @@
 '''
 A Python object relational mapper for SQLite.
 
+Reference: https://www.sqlite.org/lang.html
+
 Author: Fernando Felix do Nascimento Junior
 License: MIT License
 Homepage: https://github.com/fernandojunior/python-sqlite-orm
@@ -8,21 +10,35 @@ Homepage: https://github.com/fernandojunior/python-sqlite-orm
 import sqlite3
 
 
-def cut_attrs(obj, keys):
-    return dict(i for i in vars(obj).items() if i[0] not in keys)
+#: Dictionary to map Python and SQLite data types
+DATA_TYPES = {str: 'TEXT', int: 'INTEGER', float: 'REAL'}
 
 
-def render_schema(model):  # factory method to create table schemas for models
-    schema = 'create table {table} (id integer primary key autoincrement, {columns});'  # noqa
-    datatypes = {str: 'text', int: 'integer', float: 'real'}
-    iscol = lambda key, value: key[0] is not '_' and value in datatypes.keys()
-    colrender = lambda key, value: '%s %s' % (key, datatypes[value])
-    cols = [colrender(*i) for i in vars(model).items() if iscol(*i)]
-    values = {'table': model.__name__, 'columns': ', '.join(cols)}
-    return schema.format(**values)
+def attrs(obj):
+    ''' Return attribute values dictionary for an object '''
+    return dict(i for i in vars(obj).items() if i[0][0] is not '_')
 
 
-class Database(object):  # proxy class to access sqlite3.connect method
+def copy_attrs(obj, remove=[]):
+    ''' Copy attribute values for an object '''
+    return dict(i for i in attrs(obj).items() if i[0] not in remove)
+
+
+def render_column_definitions(model):
+    ''' Create SQLite column definitions for an entity model '''
+    return ['%s %s' % (k, DATA_TYPES[v]) for k, v in attrs(model).items()]
+
+
+def render_create_table_stmt(model):
+    ''' Render a SQLite statement to create a table for an entity model '''
+    sql = 'CREATE TABLE {table_name} (id integer primary key autoincrement, {column_def});'  # noqa
+    column_definitions = ', '.join(render_column_definitions(model))
+    params = {'table_name': model.__name__, 'column_def': column_definitions}
+    return sql.format(**params)
+
+
+class Database(object):
+    ''' Proxy class to access sqlite3.connect method '''
 
     def __init__(self, *args, **kwargs):
         self.args = args
@@ -55,18 +71,20 @@ class Database(object):  # proxy class to access sqlite3.connect method
         self.commit()
 
 
-class Manager(object):  # data mapper interface (generic repository) for models
+class Manager(object):
+    ''' Data mapper interface (generic repository) for models '''
 
-    def __init__(self, db, model):
+    def __init__(self, db, model, type_check=True):
         self.db = db
         self.model = model
-        self.tablename = model.__name__
+        self.table_name = model.__name__
+        self.type_check = type_check
         if not self._hastable():
-            self.db.executescript(render_schema(self.model))
+            self.db.executescript(render_create_table_stmt(self.model))
 
     def all(self):
-        cursor = self.db.execute('select * from %s' % self.tablename)
-        return (self.create(**row) for row in cursor.fetchall())
+        result = self.db.execute('SELECT * FROM %s' % self.table_name)
+        return (self.create(**row) for row in result.fetchall())
 
     def create(self, **kwargs):
         obj = object.__new__(self.model)
@@ -75,66 +93,80 @@ class Manager(object):  # data mapper interface (generic repository) for models
 
     def delete(self, obj):
         sql = 'DELETE from %s WHERE id = ?'
-        self.db.execute(sql % self.tablename, obj.id)
+        self.db.execute(sql % self.table_name, obj.id)
 
     def get(self, id):
-        sql = 'select * from %s where id = ?' % self.tablename
-        cursor = self.db.execute(sql, id)
-        row = cursor.fetchone()
+        sql = 'SELECT * FROM %s WHERE id = ?' % self.table_name
+        result = self.db.execute(sql, id)
+        row = result.fetchone()
         if not row:
             msg = 'Object%s with id does not exist: %s' % (self.model, id)
             raise ValueError(msg)
         return self.create(**row)
 
     def has(self, id):
-        sql = 'select id from %s where id = ?' % self.tablename
-        cursor = self.db.execute(sql, id)
-        return True if cursor.fetchall() else False
+        sql = 'SELECT id FROM %s WHERE id = ?' % self.table_name
+        result = self.db.execute(sql, id)
+        return True if result.fetchall() else False
 
     def save(self, obj):
-        if hasattr(obj, 'id') and self.has(obj.id):
+        if 'id' in obj.__dict__ and self.has(obj.id):
             msg = 'Object%s id already registred: %s' % (self.model, obj.id)
             raise ValueError(msg)
-        copy_ = cut_attrs(obj, 'id')
-        keys = '(%s)' % ', '.join(copy_.keys())  # (key1, ...)
-        refs = '(%s)' % ', '.join('?' for i in range(len(copy_)))  # (?, ...)
-        sql = 'insert into %s %s values %s' % (self.tablename, keys, refs)
-        cursor = self.db.execute(sql, *copy_.values())
-        obj.id = cursor.lastrowid
+        clone = copy_attrs(obj, remove=['id'])
+        self.type_check and self._isvalid(clone)
+        column_names = '%s' % ', '.join(clone.keys())
+        column_references = '%s' % ', '.join('?' for i in range(len(clone)))
+        sql = 'INSERT INTO %s (%s) VALUES (%s)' % (self.table_name, column_names, column_references)  # noqa
+        result = self.db.execute(sql, *clone.values())
+        obj.id = result.lastrowid
         return obj
 
     def update(self, obj):
-        copy_ = cut_attrs(obj, 'id')
-        keys = '= ?, '.join(copy_.keys()) + '= ?'  # key1 = ?, ...
-        sql = 'UPDATE %s SET %s WHERE id = ?' % (self.tablename, keys)
-        self.db.execute(sql, *(list(copy_.values()) + [obj.id]))
+        clone = copy_attrs(obj, remove=['id'])
+        self.type_check and self._isvalid(clone)
+        where_expressions = '= ?, '.join(clone.keys()) + '= ?'
+        sql = 'UPDATE %s SET %s WHERE id = ?' % (self.table_name, where_expressions)  # noqa
+        self.db.execute(sql, *(list(clone.values()) + [obj.id]))
 
     def _hastable(self):
-        sql = 'select name len FROM sqlite_master where type = ? AND name = ?'
-        cursor = self.db.execute(sql, 'table', self.tablename)
-        return True if cursor.fetchall() else False
+        ''' Check if entity model already has a database table '''
+        sql = 'SELECT name len FROM sqlite_master WHERE type = ? AND name = ?'
+        result = self.db.execute(sql, 'table', self.table_name)
+        return True if result.fetchall() else False
+
+    def _isvalid(self, attr_values):
+        ''' Check if an attr values dict are valid as specificated in model '''
+        attr_types = attrs(self.model)
+        value_types = {a: v.__class__ for a, v in attr_values.items()}
+
+        for attr, value_type in value_types.items():
+            if value_type is not attr_types[attr]:
+                msg = "%s value should be type %s not %s"
+                raise TypeError(msg % (attr, attr_types[attr], value_type))
 
 
-class Model(object):  # abstract entity model with an active record interface
+class Model(object):
+    ''' Abstract entity model with an active record interface '''
 
     db = None
 
-    def delete(self):
-        return self.__class__.manager().delete(self)
+    def delete(self, type_check=True):
+        return self.__class__.manager(type_check=type_check).delete(self)
 
-    def save(self):
-        return self.__class__.manager().save(self)
+    def save(self, type_check=True):
+        return self.__class__.manager(type_check=type_check).save(self)
 
-    def update(self):
-        return self.__class__.manager().update(self)
+    def update(self, type_check=True):
+        return self.__class__.manager(type_check=type_check).update(self)
 
     @property
     def public(self):
-        return dict(i for i in vars(self).items() if i[0][0] is not '_')
+        return attrs(self)
 
     def __repr__(self):
         return str(self.public)
 
     @classmethod
-    def manager(cls, db=None):
-        return Manager(db if db else cls.db, cls)
+    def manager(cls, db=None, type_check=True):
+        return Manager(db if db else cls.db, cls, type_check)
