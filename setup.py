@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='sqlite-orm',
-    version='0.0.1-beta',
+    version='0.0.2-beta',
     author='Fernando Felix do Nascimento Junior',
     url='https://github.com/fernandojunior/python-sqlite-orm',
     license='MIT License',
