@@ -20,6 +20,7 @@ try:
     post.text = 'Hello Mundo'
     post.update()
     db.commit()
+    post = Post.manager().get(id=1)
     assert(post.text == 'Hello Mundo')
     post.delete()
     db.commit()

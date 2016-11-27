@@ -52,6 +52,7 @@ Following a basic tutorial to demonstrate how to use the ORM.
 5. Change the hello world post and update it in the database.
 
     ```py
+    >>> post = Post.manager().get(id=1)
     >>> post.text = 'Hello Mundo'
     >>> post.update()
     >>> post.text
