@@ -65,3 +65,6 @@ target/
 db.*
 
 TODO*
+**.sqlite
+**.sqlite-journal
+**.env

@@ -99,6 +99,15 @@ Following a basic tutorial to demonstrate how to use the ORM.
     []
     ```
 
+## Linter
+
+Check code lint:
+
+```sh
+pip install pylint
+pylint orm.py
+```
+
 ## Contributing
 
 See [CONTRIBUTING](/CONTRIBUTING.md).
