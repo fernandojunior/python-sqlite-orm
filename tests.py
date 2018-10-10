@@ -6,7 +6,6 @@ db = Database('db.sqlite.test')
 
 
 class Post(db.Model):
-
     random = float
     text = str
 
